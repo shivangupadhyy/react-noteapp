@@ -8,6 +8,8 @@ export default function Dashboard() {
   const [newTitle, setNewTitle] = useState('')
   const [newContent, setNewContent] = useState('')
   const [editingId, setEditingId] = useState(null)
+  const [editTitle, setEditTitle] = useState('')
+  const [editContent, setEditContent] = useState('')
 
   const fetchNotes = async () => {
     if (!auth.currentUser) return
@@ -24,8 +26,12 @@ export default function Dashboard() {
     fetchNotes()
   }
 
-  const updateNote = async (noteId, updatedTitle, updatedContent) => {
-    await updateDoc(doc(db, 'notes', auth.currentUser.uid, 'myNotes', noteId), { title: updatedTitle, content: updatedContent })
+  const saveNote = async () => {
+    if (!editTitle || !editContent) return
+    await updateDoc(doc(db, 'notes', auth.currentUser.uid, 'myNotes', editingId), {
+      title: editTitle,
+      content: editContent,
+    })
     fetchNotes()
     setEditingId(null)
   }
@@ -35,7 +41,15 @@ export default function Dashboard() {
     fetchNotes()
   }
 
-  useEffect(() => { fetchNotes() }, [])
+  const startEditing = (note) => {
+    setEditingId(note.id)
+    setEditTitle(note.title)
+    setEditContent(note.content)
+  }
+
+  useEffect(() => {
+    fetchNotes()
+  }, [])
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -69,17 +83,17 @@ export default function Dashboard() {
               <>
                 <input
                   type="text"
-                  value={note.title}
-                  onChange={(e) => updateNote(note.id, e.target.value, note.content)}
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
                   className="w-full mb-2 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <textarea
-                  value={note.content}
-                  onChange={(e) => updateNote(note.id, note.title, e.target.value)}
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
                   className="w-full mb-4 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 h-32"
                 />
                 <button
-                  onClick={() => setEditingId(null)}
+                  onClick={saveNote}
                   className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition duration-300 flex items-center justify-center"
                 >
                   <CheckIcon className="h-5 w-5 mr-2" />
@@ -92,7 +106,7 @@ export default function Dashboard() {
                 <p className="text-gray-600 mb-4">{note.content}</p>
                 <div className="flex justify-end space-x-2">
                   <button
-                    onClick={() => setEditingId(note.id)}
+                    onClick={() => startEditing(note)}
                     className="bg-yellow-500 text-white p-2 rounded-full hover:bg-yellow-600 transition duration-300"
                   >
                     <PencilIcon className="h-5 w-5" />
